@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace _4
@@ -10,7 +11,7 @@ namespace _4
         private Assembly _assemblyToProcess;
         private Type[] _assemblyTypes;
 
-        private Assembly LoadAssembly(string pathToAssembly)
+        private void Initialize(string pathToAssembly)
         {
             var fullPathToAssembly = Path.GetFullPath(pathToAssembly);
             _assemblyToProcess = Assembly.LoadFile(fullPathToAssembly);
@@ -23,15 +24,42 @@ namespace _4
             {
                 throw new FileNotFoundException();
             }
-
-            return Assembly.LoadFile(fullPathToAssembly);
         }
 
-        public AssemblyManager GetPublickMethods(string pathToAssembly)
+        public AssemblyManager FromAssembly(string pathToAssembly)
         {
-            var assemblyToAnalize = LoadAssembly(pathToAssembly);
-            _assemblyTypes = assemblyToAnalize.
+            Initialize(pathToAssembly);
             return this;
+        }
+
+        public AssemblyManager GetPublickMembers()
+        {
+            var publicMembers = from assemblyType in _assemblyTypes
+                                where assemblyType.IsPublic
+                                select assemblyType;
+
+            _assemblyTypes = publicMembers.ToArray();
+
+            return this;
+        }
+
+        public AssemblyManager SortByNamespaceAndName()
+        {
+            var sortedTypes = from assemblyType in _assemblyTypes
+                              orderby assemblyType.Namespace, assemblyType.Name
+                              select assemblyType;
+
+            _assemblyTypes = sortedTypes.ToArray();
+
+            return this;
+        }
+
+        public List<string> GetAssemblyTypesNames()
+        {
+            var assemblyTypesNames = from assemblyType in _assemblyTypes
+                                     select assemblyType.FullName;
+
+            return assemblyTypesNames.ToList();
         }
 
         public void Dispose()
